@@ -1,0 +1,1 @@
+Aplicación web de movies(Películas) desarrollado con herramientas javascript, node.js, express conectado con una base de datos(NO-SQL) orientada a grafos.para consultar y mostrar grafos relacionados a películas y otros
