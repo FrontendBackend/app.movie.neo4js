@@ -71,7 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           "waves-effect",
           "waves-light",
           "blue",
-          "tooltipped"
+          // "tooltipped"
         );
         button.setAttribute("data-tooltip", "Mostrar grafo");
         icon.classList.add("material-icons");
