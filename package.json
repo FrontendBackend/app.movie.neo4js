@@ -1,0 +1,9 @@
+{
+  "dependencies": {
+    "cors": "^2.8.5",
+    "cytoscape": "^3.29.2",
+    "express": "^4.19.2",
+    "materialize-css": "^1.0.0-rc.2",
+    "neo4j-driver": "^5.20.0"
+  }
+}
