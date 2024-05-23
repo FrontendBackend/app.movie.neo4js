@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Conexión a Neo4j</title>
+    <script src="https://cdn.jsdelivr.net/npm/neo4j-driver"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.21.1/cytoscape.min.js"></script>
+    <!-- Compiled and minified JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        #cy {
+            width: 100%;
+            height: 600px;
+            border: 1px solid #ccc;
+        }
+
+         .tabla {
+            width: 100%;
+            height: 700px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="row">
+        <div class="row">
+            <div class="card">
+                <div class="input-field col s6">
+                    <input type="text" id="movieInput">
+                    <label for="movieInput">Buscar película</label>
+                </div>
+                <div class="input-field col s6">
+                    <button id="searchButton" class="btn waves-effect waves-light blue" type="submit">
+                        <i class="material-icons right">search</i> Buscar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Barra de progreso -->
+        <div class="col s12">
+            <div id="progress" class="progress" style="display: none;">
+                <div class="indeterminate"></div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col s6">
+                <span id="contarPeliculas"></span>
+                <div class="card tabla">
+                    <table class="highlight">
+                        <thead>
+                            <tr>
+                                <th>Película</th>
+                            </tr>
+                        </thead>
+                        <tbody id="moviesTableBody">
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="col s6">
+                <div id="cy"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de la conexión a Neo4j
+        const URL_DB = `neo4j+s://8fb721a1.databases.neo4j.io`;
+        const USER_DB = `neo4j`;
+        const PASS_DB = `P4geB7xYUpDyiIOCKYx0s61FPC68vmsTrpOltQ_Csz0`;
+        // Crea una instancia del driver, especificando la URL de tu base de datos y las credenciales
+        const driver = neo4j.driver(
+            URL_DB, // URL de la base de datos
+            neo4j.auth.basic(USER_DB, PASS_DB) // Usuario y contraseña
+        );
+
+        async function fetchDataFromNeo4j(paramTitulo) {
+            const session = driver.session();
+            const progress = document.getElementById("progress");
+            try {
+                // Mostrar barra de progreso
+                progress.style.display = "block";
+                const result = await session.run(paramTitulo);
+                const nodes = [];
+                const edges = [];
+                const nodeSet = new Set();
+                // Tabla película
+                const moviesTableBody = document.getElementById("moviesTableBody");
+
+                result.records.forEach((record) => {
+                    const path = record.get("p");
+
+                    path.segments.forEach((segment) => {
+                        const startNode = segment.start;
+                        const endNode = segment.end;
+                        const relationship = segment.relationship;
+
+                        if (!nodeSet.has(startNode.identity.toString())) {
+                            nodes.push({
+                                data: {
+                                    id: startNode.identity.toString(),
+                                    label: startNode.labels.includes("Pelicula")
+                                        ? startNode.properties.title
+                                        : startNode.labels.includes("Genre")
+                                            ? startNode.properties.name
+                                            : startNode.properties.descripcion,
+                                    type: startNode.labels[0],
+                                },
+                            });
+                            nodeSet.add(startNode.identity.toString());
+                        }
+
+                        if (!nodeSet.has(endNode.identity.toString())) {
+                            nodes.push({
+                                data: {
+                                    id: endNode.identity.toString(),
+                                    label: endNode.labels.includes("Pelicula")
+                                        ? endNode.properties.title
+                                        : endNode.labels.includes("Genre")
+                                            ? endNode.properties.name
+                                            : endNode.properties.descripcion,
+                                    type: endNode.labels[0],
+                                },
+                            });
+                            nodeSet.add(endNode.identity.toString());
+                        }
+
+                        edges.push({
+                            data: {
+                                id: relationship.identity.toString(),
+                                source: startNode.identity.toString(),
+                                target: endNode.identity.toString(),
+                                label: relationship.type,
+                            },
+                        });
+                    });
+                });
+
+                const elements = [...nodes, ...edges];
+
+                // Limpiar la tabla
+                moviesTableBody.innerHTML = "";
+
+                // Listar los registros de tipo "Pelicula"
+                let pelicula = nodes.filter(
+                    (peli) => peli.data.type === "Pelicula"
+                );
+
+                // Si no hay registros se mostrará el mensaje en la tabla "No hay registros"
+                if (pelicula.length === 0) {
+                     // Mostrar alerta
+                    alert('Película que busca no se encuentra en la base de datos.');
+                    displayNoRecordsMessage();
+                }
+
+                // Actualizar el label con el número de películas
+                contarPeliculas.textContent = `${pelicula.length === 0 ? "" : `${pelicula.length} película(s)`
+                    } `;
+
+                // Creación de la tabla de peliculas y sus botones
+                pelicula.forEach((movie) => {
+                    const row = document.createElement("tr");
+                    const titleCell = document.createElement("td");
+                    const actionCell = document.createElement("td");
+                    const button = document.createElement("button");
+                    const icon = document.createElement("i");
+
+                    titleCell.textContent = movie.data.label || "N/A";
+                    button.classList.add(
+                        "btn",
+                        "waves-effect",
+                        "waves-light",
+                        "blue",
+                        // "tooltipped"
+                    );
+                    button.setAttribute("data-tooltip", "Mostrar grafo");
+                    icon.classList.add("material-icons");
+                    icon.textContent = "hub"; // Ícono de visibilidad
+
+                    button.appendChild(icon);
+                    button.addEventListener("click", async () => {
+                        progress.style.display = "block";
+                        const titulo = movie.data.label;
+                        const titulolimpio = titulo.replace(/\s*\(.*?\)\s*$/, "");
+                        const query = `MATCH p=((g:Genre)<-[*]-(m:Pelicula where m.title =~ "(?i).*${titulolimpio}.*")<-[*]-(u:Usuario)) RETURN p`;
+                        await fetchGraphData(query);
+                    });
+
+                    actionCell.appendChild(button);
+                    row.appendChild(titleCell);
+                    row.appendChild(actionCell);
+                    moviesTableBody.appendChild(row);
+                });
+
+                const cy = cytoscape({
+                    container: document.getElementById("cy"),
+                    elements: elements,
+                    style: [
+                        {
+                            selector: "node",
+                            style: {
+                                "background-color": function (ele) {
+                                    if (ele.data("type") === "Usuario") return "#F0A30A"; // Color amarillo
+                                    if (ele.data("type") === "Pelicula") return "#60A917"; // Color verde
+                                    if (ele.data("type") === "Genre") return "#1BA1E2"; // Color celeste
+                                    return "#CCCCCC"; // Default color for other types
+                                },
+                                label: "data(label)",
+                                shape: "ellipse", // Mantener la forma de círculo
+                                "text-wrap": "wrap", // Envolver texto
+                                "text-max-width": "80px", // Máximo ancho del texto dentro del nodo
+                                "text-valign": "center",
+                                "text-halign": "center",
+                                color: "#fff",
+                                "font-size": "12px",
+                                height: "80px", // Altura fija del nodo
+                                width: "80px", // Ancho fijo del nodo
+                            },
+                        },
+                        {
+                            selector: "edge",
+                            style: {
+                                width: 10,
+                                "target-arrow-shape": "triangle", // Forma de la flecha
+                                // 'curve-style': 'bezier', // Curva Bezier para las aristas
+                                label: "data(label)",
+                                "font-size": "10px",
+                                "text-rotation": "autorotate",
+                                "text-margin-y": -10,
+                                "line-color": "#FAE6B4",
+                                "target-arrow-color": "#FAE6B4",
+                            },
+                        },
+                    ],
+                    layout: {
+                        name: "cose",
+                        idealEdgeLength: 100,
+                        nodeOverlap: 20,
+                    },
+                });
+            } catch (error) {
+                console.error('Error al obtener los datos de Neo4j:', error);
+                // Ocultar barra de progreso
+                progress.style.display = "none";
+            } finally {
+                // Ocultar barra de progreso
+                progress.style.display = "none";
+                await session.close();
+            }
+        }
+
+        // Metodo para mostrar la tabla sin registros de peliculas
+        function displayNoRecordsMessage() {
+            const row = document.createElement("tr");
+            const cell = document.createElement("td");
+            cell.colSpan = 2;
+            cell.textContent = "No hay registros";
+            cell.style.textAlign = "center";
+            row.appendChild(cell);
+            moviesTableBody.appendChild(row);
+        }
+
+        async function fetchGraphData(query) {
+            const session = driver.session();
+            const progress = document.getElementById("progress");
+
+            try {
+
+                const result = await session.run(query);
+                const nodes = [];
+                const edges = [];
+                const nodeSet = new Set();
+
+                result.records.forEach((record) => {
+                    const path = record.get("p");
+
+                    path.segments.forEach((segment) => {
+                        const startNode = segment.start;
+                        const endNode = segment.end;
+                        const relationship = segment.relationship;
+
+                        if (!nodeSet.has(startNode.identity.toString())) {
+                            nodes.push({
+                                data: {
+                                    id: startNode.identity.toString(),
+                                    label: startNode.labels.includes("Pelicula")
+                                        ? startNode.properties.title
+                                        : startNode.labels.includes("Genre")
+                                            ? startNode.properties.name
+                                            : startNode.properties.descripcion,
+                                    type: startNode.labels[0],
+                                },
+                            });
+                            nodeSet.add(startNode.identity.toString());
+                        }
+
+                        if (!nodeSet.has(endNode.identity.toString())) {
+                            nodes.push({
+                                data: {
+                                    id: endNode.identity.toString(),
+                                    label: endNode.labels.includes("Pelicula")
+                                        ? endNode.properties.title
+                                        : endNode.labels.includes("Genre")
+                                            ? endNode.properties.name
+                                            : endNode.properties.descripcion,
+                                    type: endNode.labels[0],
+                                },
+                            });
+                            nodeSet.add(endNode.identity.toString());
+                        }
+
+                        edges.push({
+                            data: {
+                                id: relationship.identity.toString(),
+                                source: startNode.identity.toString(),
+                                target: endNode.identity.toString(),
+                                label: relationship.type,
+                            },
+                        });
+                    });
+                });
+
+                const elements = [...nodes, ...edges];
+
+                const cy = cytoscape({
+                    container: document.getElementById("cy"),
+                    elements: elements,
+                    style: [
+                        {
+                            selector: "node",
+                            style: {
+                                "background-color": function (ele) {
+                                    if (ele.data("type") === "Usuario") return "#F0A30A"; // Color amarillo
+                                    if (ele.data("type") === "Pelicula") return "#60A917"; // Color verde
+                                    if (ele.data("type") === "Genre") return "#1BA1E2"; // Color celeste
+                                    return "#CCCCCC"; // Default color for other types
+                                },
+                                label: "data(label)",
+                                shape: "ellipse", // Mantener la forma de círculo
+                                "text-wrap": "wrap", // Envolver texto
+                                "text-max-width": "80px", // Máximo ancho del texto dentro del nodo
+                                "text-valign": "center",
+                                "text-halign": "center",
+                                color: "#fff",
+                                "font-size": "12px",
+                                height: "80px", // Altura fija del nodo
+                                width: "80px", // Ancho fijo del nodo
+                            },
+                        },
+                        {
+                            selector: "edge",
+                            style: {
+                                width: 10,
+                                "target-arrow-shape": "triangle", // Forma de la flecha
+                                // 'curve-style': 'bezier', // Curva Bezier para las aristas
+                                label: "data(label)",
+                                "font-size": "10px",
+                                "text-rotation": "autorotate",
+                                "text-margin-y": -10,
+                                "line-color": "#FAE6B4",
+                                "target-arrow-color": "#FAE6B4",
+                            },
+                        },
+                    ],
+                    layout: {
+                        name: "cose",
+                        idealEdgeLength: 100,
+                        nodeOverlap: 20,
+                    },
+                });
+            } catch (error) {
+                console.error('Error al obtener los datos de Neo4j:', error);
+                progress.style.display = "none";
+            } finally {
+                progress.style.display = "none";
+                await session.close();
+            }
+        }
+
+        document.getElementById('searchButton').addEventListener('click', () => {
+            const progress = document.getElementById("progress");
+            // Mostrar barra de progreso
+            progress.style.display = "block";
+            const searchValue = document.getElementById('movieInput').value;
+            // const query = `MATCH (n:Movie {title: '${searchValue}'})-[r]->(m) RETURN n, r, m LIMIT 25`;
+            const query = `MATCH p=((g:Genre)<-[*]-(m:Pelicula where m.title =~ "(?i).*${searchValue}.*")<-[*]-(u:Usuario)) RETURN p`;
+            fetchDataFromNeo4j(query);
+        });
+
+        // Llamar a la función con una consulta inicial al cargar la página
+        window.onload = () => {
+            // const initialQuery = `MATCH p=((g:Genre)<-[*]-(m:Pelicula where m.title =~ "(?i).*Expres.*")<-[*]-(u:Usuario)) RETURN p`;
+            // fetchDataFromNeo4j(initialQuery);
+            displayNoRecordsMessage()
+        };
+    </script>
+</body>
+
+</html>
