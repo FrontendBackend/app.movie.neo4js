@@ -21,18 +21,25 @@
             height: 700px;
             overflow-y: auto;
         }
+
+        .toast-custom {
+            bottom: -580px !important;
+            /* Ajusta el valor para colocar el toast donde desees */
+            top: auto !important;
+            transform: translateX(-50%) !important;
+        }
     </style>
 </head>
 
 <body>
-    
+
     <div class="row">
         <div class="row">
             <div class="card">
                 <div class="col s3 m3">
                     <br>
                     <select class="browser-default" id="user-select">
-                        <option>Seleccionar usuario</option>
+                        <option value="">Selecionar usuario</option>
                     </select>
                 </div>
 
@@ -87,7 +94,7 @@
             neo4j.auth.basic(USER_DB, PASS_DB) // Usuario y contraseña
         );
 
-        async function fetchDataFromNeo4j(paramTitulo) {
+        async function consultarDataPorCriterioFiltro(paramTitulo) {
             const session = driver.session();
             const progress = document.getElementById("progress");
             try {
@@ -161,8 +168,11 @@
 
                 // Si no hay registros de manera inicial o mediante la busqueda se mostrará el mensaje en la tabla "No hay registros"
                 if (pelicula.length === 0) {
-                    // Mostrar alerta
-                    alert('Película que busca no se encuentra en la base de datos.');
+                    // Mostrar mensaje de alerta
+                    let message = `No se encuentran datos que coincidan con los criterios de filtro.`;
+                    let actionColor = `yellow-text`;
+                    let tipo = `Aviso`;
+                    mostrarMensajeFlotante(message, actionColor, tipo);
                     inicializarMensajeSinRegistroTabla();
                 }
 
@@ -183,9 +193,9 @@
                         "waves-effect",
                         "waves-light",
                         "blue",
-                        // "tooltipped"
+                        "tooltipped"
                     );
-                    button.setAttribute("data-tooltip", "Mostrar grafo");
+                    button.setAttribute("data-tooltip", "Mostrar en grafos");
                     icon.classList.add("material-icons");
                     icon.textContent = "hub"; // Ícono de visibilidad
 
@@ -193,14 +203,14 @@
                     button.addEventListener("click", async () => {
                         progress.style.display = "block";
                         const titulo = movie.data.label;
-                        const titulolimpio = titulo.replace(/\s*\(.*?\)\s*$/, "");
+                        const titulolimpio = titulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
                         const query = `
                             MATCH (m:Pelicula)
                             WHERE m.title =~ "(?i).*${titulolimpio}.*"
                             MATCH p=((u:Usuario)-[*]->(m)-[*]->(g:Genre))
                             RETURN p
                         `;
-                        await fetchGraphData(query);
+                        await consultarDataPorTituloPeli(query);
                     });
 
                     actionCell.appendChild(button);
@@ -209,54 +219,17 @@
                     moviesTableBody.appendChild(row);
                 });
 
-                const cy = cytoscape({
-                    container: document.getElementById("cy"),
-                    elements: elements,
-                    style: [
-                        {
-                            selector: "node",
-                            style: {
-                                "background-color": function (ele) {
-                                    if (ele.data("type") === "Usuario") return "#F0A30A"; // Color amarillo
-                                    if (ele.data("type") === "Pelicula") return "#60A917"; // Color verde
-                                    if (ele.data("type") === "Genre") return "#1BA1E2"; // Color celeste
-                                    return "#CCCCCC"; // Default color for other types
-                                },
-                                label: "data(label)",
-                                shape: "ellipse", // Mantener la forma de círculo
-                                "text-wrap": "wrap", // Envolver texto
-                                "text-max-width": "80px", // Máximo ancho del texto dentro del nodo
-                                "text-valign": "center",
-                                "text-halign": "center",
-                                color: "#fff",
-                                "font-size": "12px",
-                                height: "80px", // Altura fija del nodo
-                                width: "80px", // Ancho fijo del nodo
-                            },
-                        },
-                        {
-                            selector: "edge",
-                            style: {
-                                width: 10,
-                                "target-arrow-shape": "triangle", // Forma de la flecha
-                                // 'curve-style': 'bezier', // Curva Bezier para las aristas
-                                label: "data(label)",
-                                "font-size": "10px",
-                                "text-rotation": "autorotate",
-                                "text-margin-y": -10,
-                                "line-color": "#FAE6B4",
-                                "target-arrow-color": "#FAE6B4",
-                            },
-                        },
-                    ],
-                    layout: {
-                        name: "cose",
-                        idealEdgeLength: 100,
-                        nodeOverlap: 20,
-                    },
-                });
+                // Inicializar tooltips de Materialize
+                const tooltips = document.querySelectorAll(".tooltipped");
+                M.Tooltip.init(tooltips);
+
+                dibujarGrafos(elements)
             } catch (error) {
-                console.error('Error al obtener los datos de Neo4j:', error);
+                // Mostrar mensaje de alerta
+                let message = (`Error al obtener los datos de Neo4j: `, error);
+                let actionColor = `red-text`;
+                let tipo = `Error`;
+                mostrarMensajeFlotante(message, actionColor, tipo);
                 // Ocultar barra de progreso
                 progress.style.display = "none";
             } finally {
@@ -264,6 +237,11 @@
                 progress.style.display = "none";
                 await session.close();
             }
+        }
+
+        function mostrarMensajeFlotante(message, actionColor, tipo) {
+            var toastHTML = `<span>${message}</span><button class="btn-flat toast-action ${actionColor}">${tipo}</button>`;
+            M.toast({ html: toastHTML, classes: 'toast-custom', displayLength: 6000 }); // Duración de 6 segundos
         }
 
         // Metodo para mostrar la tabla sin registros de peliculas
@@ -277,7 +255,7 @@
             moviesTableBody.appendChild(row);
         }
 
-        async function fetchGraphData(query) {
+        async function consultarDataPorTituloPeli(query) {
             const session = driver.session();
             const progress = document.getElementById("progress");
 
@@ -339,54 +317,13 @@
 
                 const elements = [...nodes, ...edges];
 
-                const cy = cytoscape({
-                    container: document.getElementById("cy"),
-                    elements: elements,
-                    style: [
-                        {
-                            selector: "node",
-                            style: {
-                                "background-color": function (ele) {
-                                    if (ele.data("type") === "Usuario") return "#F0A30A"; // Color amarillo
-                                    if (ele.data("type") === "Pelicula") return "#60A917"; // Color verde
-                                    if (ele.data("type") === "Genre") return "#1BA1E2"; // Color celeste
-                                    return "#CCCCCC"; // Default color for other types
-                                },
-                                label: "data(label)",
-                                shape: "ellipse", // Mantener la forma de círculo
-                                "text-wrap": "wrap", // Envolver texto
-                                "text-max-width": "80px", // Máximo ancho del texto dentro del nodo
-                                "text-valign": "center",
-                                "text-halign": "center",
-                                color: "#fff",
-                                "font-size": "12px",
-                                height: "80px", // Altura fija del nodo
-                                width: "80px", // Ancho fijo del nodo
-                            },
-                        },
-                        {
-                            selector: "edge",
-                            style: {
-                                width: 10,
-                                "target-arrow-shape": "triangle", // Forma de la flecha
-                                // 'curve-style': 'bezier', // Curva Bezier para las aristas
-                                label: "data(label)",
-                                "font-size": "10px",
-                                "text-rotation": "autorotate",
-                                "text-margin-y": -10,
-                                "line-color": "#FAE6B4",
-                                "target-arrow-color": "#FAE6B4",
-                            },
-                        },
-                    ],
-                    layout: {
-                        name: "cose",
-                        idealEdgeLength: 100,
-                        nodeOverlap: 20,
-                    },
-                });
+                dibujarGrafos(elements)
             } catch (error) {
-                console.error('Error al obtener los datos de Neo4j:', error);
+                // Mostrar mensaje de alerta
+                let message = (`Error al obtener los datos de Neo4j: `, error);
+                let actionColor = `red-text`;
+                let tipo = `Error`;
+                mostrarMensajeFlotante(message, actionColor, tipo);
                 progress.style.display = "none";
             } finally {
                 progress.style.display = "none";
@@ -398,9 +335,19 @@
             const progress = document.getElementById("progress");
             // Mostrar barra de progreso
             progress.style.display = "block";
-            const paramTitulo = document.getElementById('movieInput').value;
-            const paramUsuario = document.getElementById('user-select').value;
-            const query = `
+            let paramTitulo = document.getElementById('movieInput').value;
+            paramTitulo = paramTitulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            let paramUsuario = document.getElementById('user-select').value;
+            let query = "";
+            if (paramUsuario === '') {
+                query = `
+                            MATCH (m:Pelicula)
+                            WHERE m.title =~ "(?i).*${paramTitulo}.*"
+                            MATCH p=((u:Usuario)-[*]->(m)-[*]->(g:Genre))
+                            RETURN p
+            `;
+            } else {
+                query = `
                             MATCH (u:Usuario)
                             WHERE u.userId = "${paramUsuario}"
                             MATCH (m:Pelicula)
@@ -408,8 +355,59 @@
                             MATCH p=((u)-[*]->(m)-[*]->(g:Genre))
                             RETURN p
             `;
-            fetchDataFromNeo4j(query);
+            }
+
+            consultarDataPorCriterioFiltro(query);
         });
+
+        async function dibujarGrafos(elements) {
+            const cy = cytoscape({
+                container: document.getElementById("cy"),
+                elements: elements,
+                style: [
+                    {
+                        selector: "node",
+                        style: {
+                            "background-color": function (ele) {
+                                if (ele.data("type") === "Usuario") return "#F0A30A"; // Color amarillo
+                                if (ele.data("type") === "Pelicula") return "#60A917"; // Color verde
+                                if (ele.data("type") === "Genre") return "#1BA1E2"; // Color celeste
+                                return "#CCCCCC"; // Default color for other types
+                            },
+                            label: "data(label)",
+                            shape: "ellipse", // Mantener la forma de círculo
+                            "text-wrap": "wrap", // Envolver texto
+                            "text-max-width": "80px", // Máximo ancho del texto dentro del nodo
+                            "text-valign": "center",
+                            "text-halign": "center",
+                            color: "#fff",
+                            "font-size": "12px",
+                            height: "80px", // Altura fija del nodo
+                            width: "80px", // Ancho fijo del nodo
+                        },
+                    },
+                    {
+                        selector: "edge",
+                        style: {
+                            width: 10,
+                            "target-arrow-shape": "triangle", // Forma de la flecha
+                            // 'curve-style': 'bezier', // Curva Bezier para las aristas
+                            label: "data(label)",
+                            "font-size": "10px",
+                            "text-rotation": "autorotate",
+                            "text-margin-y": -10,
+                            "line-color": "#FAE6B4",
+                            "target-arrow-color": "#FAE6B4",
+                        },
+                    },
+                ],
+                layout: {
+                    name: "cose",
+                    idealEdgeLength: 100,
+                    nodeOverlap: 20,
+                },
+            });
+        }
 
         async function inicializarListaUsuarios() {
             const session = driver.session();
@@ -420,14 +418,18 @@
 
                 result.records.forEach(record => {
                     const userNode = record.get('u');
-                    console.log({ userNode });
                     const option = document.createElement('option');
                     option.value = userNode.properties.userId;
                     option.text = userNode.properties.descripcion;
                     userSelect.appendChild(option);
                 });
             } catch (error) {
-                console.error('Error al obtener los usuarios de Neo4j:', error);
+                // Mostrar mensaje de alerta
+                let message = (`Error al obtener los usuarios de Neo4j: `, error);
+                let actionColor = `red-text`;
+                let tipo = `Error`;
+                mostrarMensajeFlotante(message, actionColor, tipo);
+                progress.style.display = "none";
             } finally {
                 await session.close();
             }
