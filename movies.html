@@ -36,11 +36,11 @@
     <div class="row">
         <div class="row">
             <div class="card">
-                <div class="col s3 m3">
-                    <br>
-                    <select class="browser-default" id="user-select">
+                <div class="input-field col s3 m3">
+                    <select id="user-select">
                         <option value="">Selecionar usuario</option>
                     </select>
+                    <label for="user-select">Selecionar usuario</label>
                 </div>
 
                 <div class="input-field col s6 m6">
@@ -84,6 +84,13 @@
     </div>
 
     <script>
+
+        // Inicialización de Materialize CSS
+        document.addEventListener('DOMContentLoaded', function () {
+            var elems = document.querySelectorAll('select');
+            M.FormSelect.init(elems);
+        });
+
         // Configuración de la conexión a Neo4j
         const URL_DB = `neo4j+s://8fb721a1.databases.neo4j.io`;
         const USER_DB = `neo4j`;
@@ -338,6 +345,7 @@
             let paramTitulo = document.getElementById('movieInput').value;
             paramTitulo = paramTitulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             let paramUsuario = document.getElementById('user-select').value;
+            M.FormSelect.init(paramUsuario);
             let query = "";
             if (paramUsuario === '') {
                 query = `
@@ -423,6 +431,9 @@
                     option.text = userNode.properties.descripcion;
                     userSelect.appendChild(option);
                 });
+
+                // Re-inicializar el componente select de Materialize
+                M.FormSelect.init(userSelect);
             } catch (error) {
                 // Mostrar mensaje de alerta
                 let message = (`Error al obtener los usuarios de Neo4j: `, error);
