@@ -2,13 +2,13 @@
 <html lang="es">
 
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Conexión a Neo4j</title>
     <script src="https://cdn.jsdelivr.net/npm/neo4j-driver"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.21.1/cytoscape.min.js"></script>
     <!-- Compiled and minified JavaScript -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/css/materialize.min.css" />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <style>
         #cyUser {
             width: 100%;
@@ -65,25 +65,23 @@
 
         #button-container-peli {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 10000;
-            /* Asegurar que el botón esté encima de todo */
-        }
-        
-        #button-container-user {
-            position: absolute;
             top: 50px;
             right: 10px;
             z-index: 10000;
             /* Asegurar que el botón esté encima de todo */
         }
-        
+
+        #button-container-user {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 10000;
+            /* Asegurar que el botón esté encima de todo */
+        }
     </style>
 </head>
 
 <body>
-
     <div class="row">
         <div class="row">
             <div class="card">
@@ -94,21 +92,22 @@
                     <label for="user-select">Selecionar usuario</label>
                 </div>
 
-                <div class="input-field col s6 m6">
-                    <input type="text" id="movieInput">
-                    <label for="movieInput">Buscar película</label>
-                </div>
                 <div class="input-field col s3 m3">
                     <button id="searchButton" class="btn waves-effect waves-light blue" type="submit">
                         <i class="material-icons right">search</i> Buscar
                     </button>
+                </div>
+                <div class="input-field col s3 m3">
+                    <h5>
+                        <b><span>Sistema de películas</span></b>
+                    </h5>
                 </div>
             </div>
         </div>
 
         <!-- Barra de progreso -->
         <div class="col s12 m12">
-            <div id="progress" class="progress" style="display: none;">
+            <div id="progress" class="progress" style="display: none">
                 <div class="indeterminate"></div>
             </div>
         </div>
@@ -116,15 +115,18 @@
         <div class="row">
             <div class="col s4">
                 <span id="contarPeliculas"></span>
+                <br />
+                <span id="mostrarTextoGenero"></span>
                 <div class="card tabla">
                     <table class="highlight">
                         <thead>
                             <tr>
+                                <th>movieId</th>
                                 <th>Película</th>
+                                <th>Rating</th>
                             </tr>
                         </thead>
-                        <tbody id="moviesTableBody">
-                        </tbody>
+                        <tbody id="moviesTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -132,63 +134,69 @@
                 Usuario
                 <div id="button-container-user">
                     <button id="maximize-button-user" class="btn waves-effect waves-light blue"
-                        onclick="toggleFullScreenUser()">Maximizar usuario</button>
+                        onclick="toggleFullScreenUser()">
+                        Maximizar usuario
+                    </button>
                 </div>
-                <div class="card" id="cyUser">
-                </div>
+                <div class="card" id="cyUser"></div>
             </div>
             <div class="col s4">
                 Pelicula
                 <div id="button-container-peli">
                     <button id="maximize-button-peli" class="btn waves-effect waves-light blue"
-                        onclick="toggleFullScreenPeli()">Maximizar película</button>
+                        onclick="toggleFullScreenPeli()">
+                        Maximizar película
+                    </button>
                 </div>
-                <div class="card" id="cyPeli">
-                </div>
+                <div class="card" id="cyPeli"></div>
+                <h6>copy right 2024</h6>
             </div>
         </div>
     </div>
 
     <script>
-
         let isFullScreenUser = false;
         let isFullScreenPeli = false;
 
         function toggleFullScreenUser() {
-            const cyElement = document.getElementById('cyUser');
+            const cyElement = document.getElementById("cyUser");
 
             if (!isFullScreenUser) {
                 // Maximizar pantalla completa
-                cyElement.classList.add('fullscreenU');
-                document.getElementById('maximize-button-user').textContent = 'Minimizar usuario';
+                cyElement.classList.add("fullscreenU");
+                document.getElementById("maximize-button-user").textContent =
+                    "Minimizar usuario";
             } else {
                 // Minimizar pantalla completa
-                cyElement.classList.remove('fullscreenU');
-                document.getElementById('maximize-button-user').textContent = 'Maximizar usuario';
+                cyElement.classList.remove("fullscreenU");
+                document.getElementById("maximize-button-user").textContent =
+                    "Maximizar usuario";
             }
 
             isFullScreenUser = !isFullScreenUser;
         }
 
         function toggleFullScreenPeli() {
-            const cyElement = document.getElementById('cyPeli');
+            const cyElement = document.getElementById("cyPeli");
 
             if (!isFullScreenPeli) {
                 // Maximizar pantalla completa
-                cyElement.classList.add('fullscreenP');
-                document.getElementById('maximize-button-peli').textContent = 'Minimizar película';
+                cyElement.classList.add("fullscreenP");
+                document.getElementById("maximize-button-peli").textContent =
+                    "Minimizar película";
             } else {
                 // Minimizar pantalla completa
-                cyElement.classList.remove('fullscreenP');
-                document.getElementById('maximize-button-peli').textContent = 'Maximizar película';
+                cyElement.classList.remove("fullscreenP");
+                document.getElementById("maximize-button-peli").textContent =
+                    "Maximizar película";
             }
 
             isFullScreenPeli = !isFullScreenPeli;
         }
 
         // Inicialización de Materialize CSS
-        document.addEventListener('DOMContentLoaded', function () {
-            var elems = document.querySelectorAll('select');
+        document.addEventListener("DOMContentLoaded", function () {
+            var elems = document.querySelectorAll("select");
             M.FormSelect.init(elems);
         });
 
@@ -202,18 +210,38 @@
             neo4j.auth.basic(USER_DB, PASS_DB) // Usuario y contraseña
         );
 
-        async function consultarDataPorCriterioFiltro(paramTitulo, tipoFiltro) {
+        async function consultarDataPorCriterioFiltro(
+            genero,
+            query,
+            paramUsuario,
+            queryNoPeliUser
+        ) {
             const session = driver.session();
             const progress = document.getElementById("progress");
             try {
-                // Mostrar barra de progreso
-                progress.style.display = "block";
-                const result = await session.run(paramTitulo);
-                const nodes = [];
-                const edges = [];
+                progress.style.display = "block"; // Mostrar barra de progreso
+
+                const result = await session.run(query); // Ejecutar la consulta con el parametro establecido
+                const resultDataNoPeliUser = await session.run(queryNoPeliUser); // Ejecutar la consulta con el parametro establecido
+
+                const nodeNoPeliUser = []; // Nodo para la data de peliculas que el usuario no ha visto
+                const nodes = []; // Nodo para la data de peliculas
+                const edges = []; // Relaciones entre los nodos usuarios, peliculas y géneros
                 const nodeSet = new Set();
-                // Tabla película
+
+                // Tabla película y rating
                 const moviesTableBody = document.getElementById("moviesTableBody");
+
+                // Convertir los registros obtenidos a nodos pero usarlo como una lista para la tabla
+                resultDataNoPeliUser.records.forEach((record) => {
+                    nodeNoPeliUser.push({
+                        data: {
+                            movieId: record._fields[0],
+                            label: record._fields[1],
+                            rating: record._fields[2],
+                        },
+                    });
+                });
 
                 result.records.forEach((record) => {
                     const path = record.get("p");
@@ -227,11 +255,11 @@
                             nodes.push({
                                 data: {
                                     id: startNode.identity.toString(),
-                                    label: startNode.labels.includes("Pelicula")
+                                    label: startNode.labels.includes("Peliculas")
                                         ? startNode.properties.title
-                                        : startNode.labels.includes("Genre")
-                                            ? startNode.properties.name
-                                            : startNode.properties.descripcion,
+                                        : startNode.labels.includes("Genero")
+                                            ? startNode.properties.Genero
+                                            : startNode.properties.Usuario,
                                     type: startNode.labels[0],
                                 },
                             });
@@ -242,11 +270,11 @@
                             nodes.push({
                                 data: {
                                     id: endNode.identity.toString(),
-                                    label: endNode.labels.includes("Pelicula")
+                                    label: endNode.labels.includes("Peliculas")
                                         ? endNode.properties.title
-                                        : endNode.labels.includes("Genre")
-                                            ? endNode.properties.name
-                                            : endNode.properties.descripcion,
+                                        : endNode.labels.includes("Genero")
+                                            ? endNode.properties.Genero
+                                            : endNode.properties.Usuario,
                                     type: endNode.labels[0],
                                 },
                             });
@@ -264,38 +292,31 @@
                     });
                 });
 
+                // console.log('resulta: ', nodes);
                 const elements = [...nodes, ...edges];
 
                 // Limpiar la tabla
                 moviesTableBody.innerHTML = "";
 
-                // Listar los registros de tipo "Pelicula"
-                let pelicula = nodes.filter(
-                    (peli) => peli.data.type === "Pelicula"
-                );
+                // Actualizar el label con el número de películas que no ha visto el usuario
+                contarPeliculas.textContent = `${nodeNoPeliUser.length === 0
+                    ? ""
+                    : `${nodeNoPeliUser.length} película(s) que no ha visto el usuario`
+                    } `;
+                mostrarTextoGenero.textContent = `(${genero})`;
 
-                // Si no hay registros de manera inicial o mediante la busqueda se mostrará el mensaje en la tabla "No hay registros"
-                if (pelicula.length === 0) {
-                    // Mostrar mensaje de alerta
-                    let message = `No se encuentran datos que coincidan con los criterios de filtro.`;
-                    let actionColor = `yellow-text`;
-                    let tipo = `Aviso`;
-                    mostrarMensajeFlotante(message, actionColor, tipo);
-                    inicializarMensajeSinRegistroTabla();
-                }
-
-                // Actualizar el label con el número de películas
-                contarPeliculas.textContent = `${pelicula.length === 0 ? "" : `${pelicula.length} película(s)`} `;
-
-                // Creación de la tabla de peliculas y sus botones
-                pelicula.forEach((movie) => {
+                // Creación de la tabla de peliculas que no ha visto el usuario con los ratings y sus botones
+                nodeNoPeliUser.forEach((movie) => {
                     const row = document.createElement("tr");
+                    const movieIdCell = document.createElement("td");
                     const titleCell = document.createElement("td");
+                    const ratingCell = document.createElement("td");
                     const actionCell = document.createElement("td");
                     const button = document.createElement("button");
                     const icon = document.createElement("i");
-
+                    movieIdCell.textContent = movie.data.movieId.low || "N/A";
                     titleCell.textContent = movie.data.label || "N/A";
+                    ratingCell.textContent = movie.data.rating.toFixed(4) || "N/A";
                     button.classList.add(
                         "btn",
                         "waves-effect",
@@ -311,18 +332,19 @@
                     button.addEventListener("click", async () => {
                         progress.style.display = "block";
                         const titulo = movie.data.label;
-                        const titulolimpio = titulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-                        const query = `
-                            MATCH (m:Pelicula)
-                            WHERE m.title =~ "(?i).*${titulolimpio}.*"
-                            MATCH p=((u:Usuario)-[*]->(m)-[*]->(g:Genre))
-                            RETURN p
-                        `;
+                        const titulolimpio = titulo.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+                        // Query que se mostrará la pelicula del usuario como parametros y se visualizará en grafos para el frame derecho
+                        const query = `match p=shortestpath((:Usuario {id_usuario: ${paramUsuario}})-[*]-(:Peliculas {title: '${titulolimpio}'})) return p`;
+
+                        // ejecutar la consulta
                         await consultarDataPorTituloPeli(query);
                     });
 
                     actionCell.appendChild(button);
+                    row.appendChild(movieIdCell);
                     row.appendChild(titleCell);
+                    row.appendChild(ratingCell);
                     row.appendChild(actionCell);
                     moviesTableBody.appendChild(row);
                 });
@@ -331,12 +353,7 @@
                 const tooltips = document.querySelectorAll(".tooltipped");
                 M.Tooltip.init(tooltips);
 
-                if (tipoFiltro === 'U') {
-                    dibujarGrafosU(elements)
-                } else {
-                    dibujarGrafosP(elements)
-                }
-
+                dibujarGrafosU(elements);
             } catch (error) {
                 // Mostrar mensaje de alerta
                 let message = (`Error al obtener los datos de Neo4j: `, error);
@@ -352,9 +369,14 @@
             }
         }
 
+        // Mostrar el mensaje flotante dependiendo de la acciones del filtro de busqueda por usuario
         function mostrarMensajeFlotante(message, actionColor, tipo) {
             var toastHTML = `<span>${message}</span><button class="btn-flat toast-action ${actionColor}">${tipo}</button>`;
-            M.toast({ html: toastHTML, classes: 'toast-custom', displayLength: 6000 }); // Duración de 6 segundos
+            M.toast({
+                html: toastHTML,
+                classes: "toast-custom",
+                displayLength: 6000,
+            }); // Duración de 6 segundos
         }
 
         // Metodo para mostrar la tabla sin registros de peliculas
@@ -368,15 +390,43 @@
             moviesTableBody.appendChild(row);
         }
 
+        // Ejecutar consulta y procesar el resultado del genero
+        async function consultarDataPorGenero(queryGenero) {
+            const session = driver.session();
+            try {
+                const resultGenero = await session.run(queryGenero);
+                let dataGenero = "";
+
+                // Convertir los registros obtenidos a nodos pero usar el resultado como parametro(genero)
+                resultGenero.records.forEach((record) => {
+                    // console.log('resultGenero: ', record._fields[0]);
+                    dataGenero = record._fields[0];
+                });
+
+                // Retornar resultado genero
+                return dataGenero;
+            } catch (error) {
+                // Mostrar mensaje de alerta
+                let message = (`Error al obtener los datos de Neo4j: `, error);
+                let actionColor = `red-text`;
+                let tipo = `Error`;
+                mostrarMensajeFlotante(message, actionColor, tipo);
+                progress.style.display = "none";
+            } finally {
+                progress.style.display = "none";
+                await session.close();
+            }
+        }
+
+        // Consultar la pelicula desde la tabla
         async function consultarDataPorTituloPeli(query) {
             const session = driver.session();
             const progress = document.getElementById("progress");
 
             try {
-
                 const result = await session.run(query);
-                const nodes = [];
-                const edges = [];
+                const nodes = []; // Nodo para la data de peliculas
+                const edges = []; // Relaciones entre los nodos usuarios, peliculas y géneros
                 const nodeSet = new Set();
 
                 result.records.forEach((record) => {
@@ -391,11 +441,11 @@
                             nodes.push({
                                 data: {
                                     id: startNode.identity.toString(),
-                                    label: startNode.labels.includes("Pelicula")
+                                    label: startNode.labels.includes("Peliculas")
                                         ? startNode.properties.title
-                                        : startNode.labels.includes("Genre")
-                                            ? startNode.properties.name
-                                            : startNode.properties.descripcion,
+                                        : startNode.labels.includes("Genero")
+                                            ? startNode.properties.Genero
+                                            : startNode.properties.Usuario,
                                     type: startNode.labels[0],
                                 },
                             });
@@ -406,11 +456,11 @@
                             nodes.push({
                                 data: {
                                     id: endNode.identity.toString(),
-                                    label: endNode.labels.includes("Pelicula")
+                                    label: endNode.labels.includes("Peliculas")
                                         ? endNode.properties.title
-                                        : endNode.labels.includes("Genre")
-                                            ? endNode.properties.name
-                                            : endNode.properties.descripcion,
+                                        : endNode.labels.includes("Genero")
+                                            ? endNode.properties.Genero
+                                            : endNode.properties.Usuario,
                                     type: endNode.labels[0],
                                 },
                             });
@@ -430,7 +480,7 @@
 
                 const elements = [...nodes, ...edges];
 
-                dibujarGrafosP(elements)
+                dibujarGrafosP(elements);
             } catch (error) {
                 // Mostrar mensaje de alerta
                 let message = (`Error al obtener los datos de Neo4j: `, error);
@@ -444,36 +494,53 @@
             }
         }
 
-        document.getElementById('searchButton').addEventListener('click', () => {
-            const progress = document.getElementById("progress");
-            // Mostrar barra de progreso
-            progress.style.display = "block";
-            let paramTitulo = document.getElementById('movieInput').value;
-            paramTitulo = paramTitulo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-            let paramUsuario = document.getElementById('user-select').value;
-            M.FormSelect.init(paramUsuario);
-            let tipoFiltro = 'P'
-            let query = "";
-            if (paramUsuario === '') {
-                query = `
-                            MATCH (m:Pelicula)
-                            WHERE m.title =~ "(?i).*${paramTitulo}.*"
-                            MATCH p=((u:Usuario)-[*]->(m)-[*]->(g:Genre))
-                            RETURN p
-            `;
-            } else {
-                tipoFiltro = 'U'
-                query = `
-                            MATCH (u:Usuario)
-                            WHERE u.userId = "${paramUsuario}"
-                            MATCH (m:Pelicula)
-                            WHERE m.title =~ "(?i).*${paramTitulo}.*"
-                            MATCH p=((u)-[*]->(m)-[*]->(g:Genre))
-                            RETURN p
-            `;
-            }
+        document.getElementById("searchButton").addEventListener("click", () => {
+            const progress = document.getElementById("progress"); // Barra de progreso
 
-            consultarDataPorCriterioFiltro(query, tipoFiltro);
+            progress.style.display = "block"; // Mostrar barra de progreso
+
+            let paramUsuario = document.getElementById("user-select").value;
+
+            M.FormSelect.init(paramUsuario);
+
+            // Query para mostrar el valor del genero
+            let queryGenero = `
+                            
+                            MATCH (n:Peliculas)-[:Genero]-(g:Genero)
+                            where EXISTS {MATCH (n)-[t:Rating  where t.rating=5]-(:Usuario {id_usuario: ${paramUsuario}})}
+                            RETURN g.Genero,count(g) as cant  order by cant desc limit 1
+            `;
+
+            // Ejecutar consulta y procesar el resultado del genero
+            consultarDataPorGenero(queryGenero).then((genero) => {
+                // Query para mostrar la lista de peliculas y ratings no vistas por el usuario en forma de tabla
+                let queryNoPeliUser = `
+                            MATCH (n:Peliculas)-[:Genero]-(g:Genero)
+                            where  NOT EXISTS {MATCH (n)-[t:Rating]-(:Usuario {id_usuario: ${paramUsuario}})}
+                            and g.Genero="${genero}"
+                            MATCH ()-[r:Rating]-(n)
+                            with  n.movieId as movieId,n.title as title,avg(r.rating) as avg_r,count(r) as cantidad
+                            where cantidad>2
+                            RETURN movieId,title,avg_r ,  cantidad   order by avg_r desc limit 20
+            `;
+
+                // Query para mostrar las peliculas con sus generos del usuario como parametro que se visualizará en grafos
+                let query = `
+                            MATCH p=(u:Usuario {id_usuario: ${paramUsuario}})-[t:Rating where t.rating = 5]-(m:Peliculas)-[:Genero]-(:Genero) RETURN p
+            `;
+
+                // Limpiar grafo del frame pelicula cuando selecciona otro usuario
+                let elements = [];
+                dibujarGrafosP(elements);
+
+                // Ejecutar consulta y procesar el resultado del query con los parametros establecidos
+                consultarDataPorCriterioFiltro(
+                    genero,
+                    query,
+                    paramUsuario,
+                    queryNoPeliUser
+                );
+            });
         });
 
         async function dibujarGrafosU(elements) {
@@ -486,9 +553,9 @@
                         style: {
                             "background-color": function (ele) {
                                 if (ele.data("type") === "Usuario") return "#F0A30A"; // Color amarillo
-                                if (ele.data("type") === "Pelicula") return "#60A917"; // Color verde
-                                if (ele.data("type") === "Genre") return "#1BA1E2"; // Color celeste
-                                return "#CCCCCC"; // Default color for other types
+                                if (ele.data("type") === "Peliculas") return "#60A917"; // Color verde
+                                if (ele.data("type") === "Genero") return "#1BA1E2"; // Color celeste
+                                return "red"; // Default color for other types
                             },
                             label: "data(label)",
                             shape: "ellipse", // Mantener la forma de círculo
@@ -507,7 +574,7 @@
                         style: {
                             width: 10,
                             "target-arrow-shape": "triangle", // Forma de la flecha
-                            // 'curve-style': 'bezier', // Curva Bezier para las aristas
+                            "curve-style": "bezier", // Curva Bezier para las aristas
                             label: "data(label)",
                             "font-size": "10px",
                             "text-rotation": "autorotate",
@@ -525,7 +592,6 @@
             });
         }
 
-
         async function dibujarGrafosP(elements) {
             const cy = cytoscape({
                 container: document.getElementById("cyPeli"),
@@ -536,8 +602,8 @@
                         style: {
                             "background-color": function (ele) {
                                 if (ele.data("type") === "Usuario") return "#F0A30A"; // Color amarillo
-                                if (ele.data("type") === "Pelicula") return "#60A917"; // Color verde
-                                if (ele.data("type") === "Genre") return "#1BA1E2"; // Color celeste
+                                if (ele.data("type") === "Peliculas") return "#60A917"; // Color verde
+                                if (ele.data("type") === "Genero") return "#1BA1E2"; // Color celeste
                                 return "#CCCCCC"; // Default color for other types
                             },
                             label: "data(label)",
@@ -557,7 +623,7 @@
                         style: {
                             width: 10,
                             "target-arrow-shape": "triangle", // Forma de la flecha
-                            // 'curve-style': 'bezier', // Curva Bezier para las aristas
+                            "curve-style": "bezier", // Curva Bezier para las aristas
                             label: "data(label)",
                             "font-size": "10px",
                             "text-rotation": "autorotate",
@@ -579,14 +645,14 @@
             const session = driver.session();
             try {
                 // Consulta a Neo4j para obtener todos los usuarios
-                const result = await session.run('MATCH (u:Usuario) RETURN u');
-                const userSelect = document.getElementById('user-select');
+                const result = await session.run("MATCH (u:Usuario) RETURN u");
+                const userSelect = document.getElementById("user-select");
 
-                result.records.forEach(record => {
-                    const userNode = record.get('u');
-                    const option = document.createElement('option');
-                    option.value = userNode.properties.userId;
-                    option.text = userNode.properties.descripcion;
+                result.records.forEach((record) => {
+                    const userNode = record.get("u");
+                    const option = document.createElement("option");
+                    option.value = userNode.properties.id_usuario;
+                    option.text = userNode.properties.Usuario;
                     userSelect.appendChild(option);
                 });
 
@@ -606,12 +672,11 @@
 
         // Llamar a la función con una consulta inicial al cargar la página
         window.onload = () => {
-            inicializarMensajeSinRegistroTabla()
+            inicializarMensajeSinRegistroTabla();
             inicializarListaUsuarios();
         };
     </script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/materialize/1.0.0/js/materialize.min.js"></script>
-
 </body>
 
 </html>
